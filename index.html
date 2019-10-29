@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ImAc Web socket control monitor</title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.css" rel="stylesheet" type="text/css" />
+	<link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+  	<img src="logo_sm.png">
+    <h1> Currently connected devices: </h1>
+    
+	<table id="clients">
+		<tr>
+			<th>Socket Id</th>
+			<th>Device ID</th>
+			<th>Type</th>
+			<th>Description</th>
+			<th>Client Address</th>
+			<th>Connected Since</th>
+		</tr>
+	</table> 
+	<input id="btnBig" value="+" type="button" onclick="resizeNetwork(600);" />
+	<input id="btnSmall" value="-" type="button" onclick="resizeNetwork(300);" />
+	<div id="mynetwork"></div>
+
+    <h1> Latest Activity: </h1>
+    <table id="commands">
+		<tr>
+			<th>Timestamp</th>
+			<th>Activity</th>
+		</tr>
+	</table> 
+    <h1> Links: </h1>
+    <a href="remote" target="_blank">Controller</a> 
+    <a href="player" target="_blank">Player</a> 
+    <a href="touch" target="_blank">Gesture</a>  
+
+    <p>Version 0.1.0 (Prepilot)</p> 
+    <script>
+    
+    var nodeIds, edgeIds, shadowState, nodesArray, nodes, edgesArray, edges, network, selectedID;
+
+	var socket = io('');
+	socket.on('connect', function(){
+		socket.emit('setClientID', { customId:'ImAc', type:'monitor', description:'Monitor'});
+	});
+
+	socket.on('clients', function(msg){
+		//Clear Old Data
+		var table = document.getElementById("clients");
+		for(var i = table.rows.length - 1; i > 0; i--) table.deleteRow(i);
+
+		//UPDATE TABLE
+
+		//Create New Table
+		for (index = 0; index < msg.length; ++index) {
+			var row = table.insertRow(1);
+			var cell1 = row.insertCell(0);
+			var cell2 = row.insertCell(1);
+			var cell3 = row.insertCell(2);
+			var cell4 = row.insertCell(3);
+			var cell5 = row.insertCell(4);
+			var cell6 = row.insertCell(5);
+			row.id = msg[index].clientId;
+			if (selectedID == row.id) row.style.backgroundColor = "yellow";
+			cell1.innerHTML = msg[index].clientId;
+			cell2.innerHTML = msg[index].customId;
+			cell3.innerHTML = msg[index].type;
+			cell4.innerHTML = msg[index].description;
+			cell5.innerHTML = msg[index].ipAddress;
+			cell6.innerHTML = msg[index].connectTime;
+		}
+		
+		//UPDATE GRAPH
+		//if we already have a node which isn't in the msg remove it
+        for (index = 0; index < nodeIds.length; ++index) {
+        	var found = 0;
+        	for (jndex = 0; jndex < msg.length; ++jndex) {
+        		if (msg[jndex].clientId == nodeIds[index]) found = 1;
+        	}
+        	
+        	if (found ==0) {        	
+				nodes.remove({id:nodeIds[index]});
+				var index = nodeIds.indexOf(nodeIds[index]);
+				nodeIds.splice(index,1);
+			}
+		}
+		
+		
+		//If we have a new node add it
+		for (index = 0; index < msg.length; ++index) {
+			if (nodeIds.indexOf(msg[index].clientId) == -1){ 
+				nodes.add({id:msg[index].clientId, label:msg[index].description, group: msg[index].type});
+				nodeIds.push(msg[index].clientId);
+			}
+        }
+        
+        //Create Links
+        //edges.clear();
+        //Links from controllers to each player
+        for (index = 0; index < msg.length; ++index) {
+        	if (msg[index].type == 'control'){
+        		for (jndex = 0; jndex < msg.length; ++jndex) {
+        			if (msg[jndex].customId == msg[index].customId && msg[jndex].type == 'player'){
+        				var id = msg[index].clientId + msg[jndex].clientId;
+        			 	if (edgeIds.indexOf(id) == -1){
+        			 		edgeIds.push(id);
+        			 		edges.add( {id: id, label: msg[index].customId, from: msg[index].clientId, to: msg[jndex].clientId, arrows: 'to'});
+        			 	}
+        			}
+        		}
+        	}
+        }
+        
+        //Links from monitor to all players and controllers
+        for (index = 0; index < msg.length; ++index) {
+        	if (msg[index].type == 'monitor'){
+        		for (jndex = 0; jndex < msg.length; ++jndex) {
+        			if (msg[jndex].type != 'monitor' && msg[jndex].type != 'player' ){
+        			 	var id = msg[index].clientId + msg[jndex].clientId;
+        			 	if (edgeIds.indexOf(id) == -1){
+        			 		edges.add( {from: msg[index].clientId, to: msg[jndex].clientId, dashes:true, arrows: 'from'});
+        			 		edgeIds.push(id);
+        			 	}
+        			}
+        		}
+        	}
+        }
+        //network.stabilize();
+        //network.fit();
+	});
+
+	socket.on('command', function(msg){
+		var table = document.getElementById("commands");
+		var now = new Date();
+
+		//Create New Table
+		var row = table.insertRow(1);
+		var cell1 = row.insertCell(0);
+		var cell2 = row.insertCell(1);
+		cell1.innerHTML = now.toLocaleString();
+		cell2.innerHTML = msg;
+	});
+	
+	
+	 function startNetwork() {
+        nodeIds = [];
+        edgeIds = [];
+        shadowState = false;
+
+
+        // create an array with nodes
+        nodesArray = [ ];
+        nodes = new vis.DataSet(nodesArray);
+
+        // create an array with edges
+        edgesArray = [];
+        edges = new vis.DataSet(edgesArray);
+
+        // create a network
+        var container = document.getElementById('mynetwork');
+        var data = {
+            nodes: nodes,
+            edges: edges
+        };
+        var options = {};
+        network = new vis.Network(container, data, options);
+        
+        
+         // legend
+		 var mynetwork = document.getElementById('mynetwork');
+		 var x = - mynetwork.clientWidth / 2 + 50;
+		 var y = - mynetwork.clientHeight / 2 + 50;
+		 var step = 70;
+		 nodes.add({id: 1000, x: x, y: y, label: 'Player', group: 'player', value: 1, fixed: true, physics:false});
+		 nodes.add({id: 1001, x: x, y: y + step, label: 'Controller', group: 'control', value: 1, fixed: true,  physics:false});
+		 nodes.add({id: 1002, x: x, y: y + 2 * step, label: 'Monitor', group: 'monitor', value: 1, fixed: true,  physics:false});
+    
+		network.on("click", function (params) {
+			if (document.getElementById(selectedID)) {
+				document.getElementById(selectedID).style.backgroundColor = "";
+				selectedID = null;	
+			}
+			if (this.getNodeAt(params.pointer.DOM) && document.getElementById(this.getNodeAt(params.pointer.DOM))){
+				selectedID = this.getNodeAt(params.pointer.DOM);
+				document.getElementById(selectedID).style.backgroundColor = "yellow";
+			}
+		});
+    
+    }
+
+	 function resizeNetwork(s) {
+			document.getElementById("mynetwork").style.height = s + "px"; 	
+			startNetwork();
+	 }
+
+    startNetwork();
+    </script>
+
+  </body>
+</html>

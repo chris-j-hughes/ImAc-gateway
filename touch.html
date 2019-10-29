@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<link rel="shortcut icon" type="image/x-icon" href="https://static.codepen.io/assets/favicon/favicon-aec34940fbc1a6e787974dcd360f2c6b63348d4b1f4e06c77743096d55480f33.ico" />
+	<title>ImAc touch control</title>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://hammerjs.github.io/dist/hammer.js"></script>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="touchElement"></div>
+<script>
+	var myElement = document.getElementById('touchElement');
+	var mc = new Hammer(myElement);
+	var play = 0;
+	
+	const urlParams = new URLSearchParams(window.location.search);
+	var myId = urlParams.get('myId');
+	if (myId == null) myId = prompt("What is the ID of this controller?");
+
+	var socket = io();
+		socket.on('connect', function(){
+		socket.emit('setClientID', { customId:myId , type:'control', description:'GestureControl'});
+	});
+
+	function sendCommand(cmd){
+		socket.emit('command', cmd);
+	}
+
+	mc.on("swipeleft", function (ev) {
+		socket.emit('command', 'backward|20');
+		myElement.textContent = "Back 20s";
+	});
+
+	mc.on("swiperight", function (ev) {
+	  socket.emit('command', 'forward|20');
+	  myElement.textContent = "Forward 20s";
+	});
+
+	mc.on("tap", function (ev) {
+		if (play == 0){
+			play = 1;
+			socket.emit('command', 'play');
+			myElement.textContent = "Playing";
+		} else {
+			play = 0;
+			socket.emit('command', 'pause');
+			myElement.textContent = "Pausing";
+		}
+	});
+</script>
+</body>
+</html>

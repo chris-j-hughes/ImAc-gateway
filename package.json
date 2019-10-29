@@ -1,0 +1,9 @@
+{
+  "name": "ImAc-remote",
+  "version": "0.0.1",
+  "description": "Remote websocket control for ImAc player",
+  "dependencies": {
+    "express": "^4.15.2",
+    "socket.io": "^2.2.0"
+  }
+}

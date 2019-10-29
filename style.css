@@ -1,0 +1,33 @@
+body {
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+	font-size: 14px;
+	line-height: 1.42857143;
+	color: #333;
+	background-color: #fff;
+}
+table {
+	border-collapse: collapse;
+	width: 800px;
+	border-style: solid;
+
+}
+
+table, th, td {
+	border: 1px solid black;
+	padding: 5px;
+	text-align: left;
+}
+
+#mynetwork {
+      width: 798px;
+      height: 300px;
+      border-style: solid;
+      border-width:1px;
+}
+
+#touchElement {
+	  background: silver;
+	  height: 300px;
+	  text-align: center;
+	  font: 30px/300px Helvetica, Arial, sans-serif;
+}

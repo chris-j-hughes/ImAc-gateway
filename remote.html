@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <title>ImAc Remote Control</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1><p id="showId"></p></h1>
+    <img src="logo_sm.png">
+   
+
+
+
+    <p><input id="btnPlay" value="Play" type="button" onclick="sendCommand('play');" /></p>
+    <p><input id="btnStop" value="Pause" type="button" onclick="sendCommand('pause');" /></p>
+    <p><input id="btnVolume_up" value="Volume Up" type="button" onclick="sendCommand('volume_up');" /></p>
+    <p><input id="btnVolume_down" value="Volume Down" type="button" onclick="sendCommand('volume_down');" /></p>
+    <p><input id="btnAD_on" value="Audio Description On" type="button" onclick="sendCommand('AD_on');" /></p>
+    <p><input id="btnAD_off" value="Audio Description Off" type="button" onclick="sendCommand('AD_off');" /></p>
+    <p><input id="btnVolume_5" value="Volume 5" type="button" onclick="sendCommand('volume_x|5');" /></p>
+    <p><input id="btnForward" value="Forward 23 seconds" type="button" onclick="sendCommand('forward|23');" /></p>
+    <p><input id="btnBack" value="Back 18 seconds" type="button" onclick="sendCommand('backward|18');" /></p>
+    
+    <br> 
+
+    <p><input id="btnSeek_forward" value="Seek Forward" type="button" onclick="sendCommand('seek_forward');" /></p>
+    <p><input id="btnSeek_back" value="Seek Back" type="button" onclick="sendCommand('seek_back');" /></p>
+    <p><input id="btnSubtitles_on" value="Subtitles On" type="button" onclick="sendCommand('subtitles_on');" /></p>
+    <p><input id="btnSubtitles_off" value="Subtitles Off" type="button" onclick="sendCommand('subtitles_off');" /></p>
+    <p><input id="btnMenu_open" value="Open Menu" type="button" onclick="sendCommand('menu_open');" /></p>
+    <p><input id="btnMenu_close" value="Close Menu" type="button" onclick="sendCommand('menu_close');" /></p>
+    <p><input id="btnPlay_1" value="Play Video 1" type="button" onclick="sendCommand('play_1');" /></p>
+    <p><input id="btnPlay_2" value="Play Video 2" type="button" onclick="sendCommand('play_2');" /></p>
+    <p><input id="btnPlay_3" value="Play Video 3" type="button" onclick="sendCommand('play_3');" /></p>
+    <p><input id="btnReturn" value="Return to Portal" type="button" onclick="sendCommand('return');" /></p>
+    
+    <br>
+
+    <p><input id="btnVR_on" value="VR Mode On" type="button" onclick="sendCommand('VR_on');" /></p>
+    <p><input id="btnVR_off" value="VR Mode Off" type="button" onclick="sendCommand('VR_off');" /></p>
+    <p><input id="btnextended_AD_on" value="Extended AD On" type="button" onclick="sendCommand('extended_AD_on');" /></p>
+    <p><input id="btnextended_AD_off" value="Extended AD Off" type="button" onclick="sendCommand('extended_AD_off');" /></p>
+    <p><input id="btnZoomIn" value="Zoom in" type="button" onclick="sendCommand('zoom_in');" /></p>
+    <p><input id="btnZoomOut" value="Zoom out" type="button" onclick="sendCommand('zoom_out');" /></p>
+    
+    
+    <p id="response"></p>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+      const urlParams = new URLSearchParams(window.location.search);
+      var myId = urlParams.get('myId');
+      if (myId == null) myId = prompt("What is the ID of this controller?");
+      document.getElementById("showId").innerHTML = "I am a controller with ID: " + myId;
+
+
+      var socket = io();
+      socket.on('connect', function(){
+        socket.emit('setClientID', { customId:myId, type:'control', description:'WebControl'});
+      });
+
+      function sendCommand(cmd){
+        socket.emit('command', cmd);
+      }
+	
+      socket.on('response', function(msg){
+	document.getElementById('response').innerHTML = msg;
+      });
+    </script>
+
+  </body>
+</html>

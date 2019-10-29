@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <title>ImAc Player Websocket example</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1><p id="showId"></p></h1>
+    <img src="logo_sm.png">
+    <ul id="commands"></ul>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+const urlParams = new URLSearchParams(window.location.search);
+var myId = urlParams.get('myId');
+if (myId == null) myId = prompt("What is the ID of this controller I am listening to?");
+document.getElementById("showId").innerHTML = "I am a player listening to commands from controller(s) with ID: " + myId;
+
+
+var socket = io('http://51.89.138.157:3000');
+socket.on('connect', function(){
+  socket.emit('setClientID', { customId:myId, type:'player', description:'WebPlayer' });
+});
+
+socket.on('command', function(msg){
+  var ul = document.getElementById("commands");
+  var li = document.createElement("li");
+  li.appendChild(document.createTextNode(msg));
+  ul.appendChild(li);
+});
+    </script>
+
+  </body>
+</html>
